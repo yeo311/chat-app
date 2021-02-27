@@ -1,8 +1,9 @@
 package main
 
 import (
-	"bytes"
+	"encoding/json"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -24,13 +25,22 @@ var (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+// Chat : chat struct
+type Chat struct {
+	Name string `json:"name"`
+	Msg  string `json:"msg"`
 }
 
 // Client :
 type Client struct {
 	hub  *Hub
 	conn *websocket.Conn
-	send chan []byte
+	send chan Chat
 }
 
 func (c *Client) readRoutine() {
@@ -49,8 +59,13 @@ func (c *Client) readRoutine() {
 			log.Println(err)
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.broadcast <- message
+		chat := Chat{}
+		if err := json.Unmarshal(message, &chat); err != nil {
+			log.Println(err)
+			break
+		}
+
+		c.hub.broadcast <- chat
 	}
 }
 
@@ -62,7 +77,7 @@ func (c *Client) writeRoutine() {
 
 	for {
 		select {
-		case message, ok := <-c.send:
+		case chat, ok := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
@@ -74,12 +89,12 @@ func (c *Client) writeRoutine() {
 				log.Println(err)
 				return
 			}
-			w.Write(message)
-
-			for i := 0; i < len(c.send); i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
+			msg, err := json.Marshal(chat)
+			if err != nil {
+				log.Println(err)
+				return
 			}
+			w.Write(msg)
 
 			if err := w.Close(); err != nil {
 				log.Println(err)
@@ -100,7 +115,7 @@ func serveWs(hub *Hub, c echo.Context) error {
 		log.Println(err)
 		return err
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{hub: hub, conn: conn, send: make(chan Chat)}
 	client.hub.register <- client
 
 	go client.writeRoutine()
