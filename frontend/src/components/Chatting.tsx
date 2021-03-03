@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { useChatState } from '../context/chatContext';
 import { WebSocketContext } from '../websocket/WebSocketProvider';
 
 export type Chat = {
@@ -8,6 +9,7 @@ export type Chat = {
 
 const Chatting: React.FC = () => {
   const ws = useContext(WebSocketContext);
+  const state = useChatState();
 
   const [items, setItems] = useState<Chat[]>([]);
 
@@ -18,15 +20,19 @@ const Chatting: React.FC = () => {
 
   return (
     <div className="chat-box">
-      <ul id="chat-list">
-        {items.map((item, index) => {
-          return (
-            <li key={index}>
-              {item.name} {item.msg}
-            </li>
-          );
-        })}
-      </ul>
+      {state.userName !== '' ? (
+        <ul id="chat-list">
+          {items.map((item, index) => {
+            return (
+              <li key={index}>
+                {item.name} {item.msg}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="msg-box">Please enter the your name.</div>
+      )}
     </div>
   );
 };

@@ -31,19 +31,19 @@ const TextInputBox: React.FC = () => {
   return (
     <div>
       {state.userName === '' ? (
-        <>
+        <div className="text-input-box">
           <input type="text" value={name} onChange={handleChangeName}></input>
           <button type="button" onClick={handleSetName}>
             Save
           </button>
-        </>
+        </div>
       ) : (
-        <>
+        <div className="text-input-box">
           <input type="text" value={msg} onChange={handleChange}></input>
           <button type="button" onClick={handleSubmit}>
             Send
           </button>
-        </>
+        </div>
       )}
     </div>
   );

@@ -9,8 +9,10 @@ const App: React.FC = () => {
   return (
     <WebSocketProvider>
       <ChatProvider>
-        <Chatting />
-        <TextInputBox />
+        <div className="container">
+          <Chatting />
+          <TextInputBox />
+        </div>
       </ChatProvider>
     </WebSocketProvider>
   );
